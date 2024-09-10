@@ -15,36 +15,42 @@ def evaluate_tree():
 
     running=True
     while running:
+        elapsed_time = pygame.time.get_ticks() - start_time
+        # print(f"{elapsed_time}")
+        if elapsed_time >= 3000:
+            running=False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             # run until all food collected
-        if num_food == environment.nest.food:
-            running = False
+        # if num_food == environment.nest.food:
+        #     running = False
             # or until it has run on for too long
-        if (pygame.time.get_ticks() - start_time) > 100000:
-            running = False
+        # if (pygame.time.get_ticks() - start_time) > 100000:
+        #     running = False
         for agent in environment.boids:
             agent.behaviour_tree.tick()
         environment.secret_agent.behaviour_tree.tick()    
-    elapsed_time = pygame.time.get_ticks() - start_time
+
     # to account for randomness affecting effectiveness?
     # not having random agent movements to differentiate them, I lowered the division factor by 10 to see bigger differences
-    fitness = elapsed_time // 10
+    fitness = environment.nest.food * 10
     pygame.quit()
     return fitness
 
 best_genome = [random.randint(0,10) for _ in range(500)]
-best_fitness = 1000000
+best_fitness = 0
 
 # maybe make it so that the agents return to the previous spot they were at before they found food to continue acting from there?
 # implement that in a move_to function along with replenishing food spots? make it an option of where to go, to nest, to food spot, or to previous spot, or to random neighbor?)
 
 #define the list of genomes outside and iterate through each of them, keeping the best one
-genomes = [[random.randint(0,10) for _ in range(500)] for _ in range(20)]
+genomes = [[random.randint(0,10) for _ in range(500)] for _ in range(25)]
 
 # set the seed prior to all the simulations to see how well the agent does in helping the other population accomplish the task
 rand_seed = random.randint(0,400)
+# rand_food_list = [random.randint(0,(len(genome)-1)) for _ in range(10)]
+# rand_neighbor_list = [random.randint(0,(len(genome)-1)) for _ in range(25)]
 
 # keeping the random seed would then let us recreate the exact genome, tree, and runtime, would it be more effective to keep track of that instead?
 while len(genomes) != 0:
@@ -69,7 +75,7 @@ while len(genomes) != 0:
     fitness= evaluate_tree()
     if fitness == "Error":
         continue
-    if best_fitness > fitness:
+    if best_fitness < fitness:
         # print(f'{fitness} is faster than {best_fitness}')
         best_fitness = fitness
         best_genome = genome_copy
@@ -116,12 +122,13 @@ while running:
     for spot in environment.foods:
         spot.show(screen)
     environment.nest.show(screen)
+    for food_area in environment.food_areas:
+        food_area.show(screen)
     for agent in environment.boids:
         agent.behaviour_tree.tick()
         agent.show(screen)
     environment.secret_agent.behaviour_tree.tick()
     environment.secret_agent.show(screen)
-    
     pygame.display.flip()
     clock.tick(60)
 elapsed = pygame.time.get_ticks() - start

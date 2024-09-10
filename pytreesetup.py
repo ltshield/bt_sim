@@ -18,22 +18,15 @@ spot_check = py_trees.common.ComparisonExpression(
     operator=lambda x, y: x == y
 )
 
-# TODO write up behavior tree implementation for the above code (hardcode first, then figure out how to evolve it)
-
-def determine_location(agent, location):
-    if location == "food_area":
-        location = random.choice(agent.environment.food_areas)
-    elif location == "den":
-        location = agent.nest
-    elif location == "neighbor":
-        location = random.choice(agent.environment.boids)
-    return location
+# simulate a random choice function by having a list of random numbers (one for each random choice, ie neighbors and food spots cause of range)
+# make it a list of random numbers with range of the indexes, (10 food spots range is 1-10), and then pop one of those each time that it is needed
+# then the simulation will remain identical since the seed (which doesn't change) will recreate the same list as well later
 
 class Move_to(py_trees.behaviour.Behaviour):
     def __init__(self, agent, location):
         super(Move_to, self).__init__(name=f"Move to {location}")
         self.agent = agent
-        self.location = determine_location(self.agent, location)
+        self.location = location
 
     def update(self):
         success = self.agent.move_to(self.location)

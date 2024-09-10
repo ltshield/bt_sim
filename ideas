@@ -1,0 +1,60 @@
+"""
+TODO: write up the functions to create nest location, food spot locations,
+    : and create the behaviour tree with each condition leading to an action
+    : THEN, write up a grammar that creates a BT (and an FSM? one that 
+    : can run from anywhere, like Prof said (all states are possible
+    : starting states))
+    : then code up an evolutionary algorithm + fitness function (amount 
+    : of food collected in time, number of iterations)
+    : figure out how to hardcode certain agents (percentage of population
+    : are gatherers, others are explorers?) WHAT OTHER ROLES ARE THERE?
+    : (are we then going to let it randomly assign conditions to actions?)
+    : supposedly they should evolve to the needs of the population?
+    : population is hardcoded, only one agent run by behaviour tree
+    : then create fitness functions dependent upon whether they are
+    : in a group or on their own (higher possibility of surviving on
+    : own but lower chance of finding food), see what evolution occurs
+    : we are trying to see what the agent evolves into
+"""
+
+        # or should the agent be allowed to eat food that it is carrying (more opportunity to explore)
+        # should I create it so that the eat food function includes the agent returning to the nest in order to eat?
+
+    # should I just code it around, if it is over food, pick it up?
+    
+    # are we just to code the specific behaviours/actions and not the 
+    # condition statements? Like whether it returns true/false?
+
+
+    # do we want them to change color based on what their action is?
+# ie. blue ones are the exploring group that only explore
+# purple are the flocking group that travel together?
+# maybe have multiple flocking groups?
+# they need to be all or nothing? or percentage chances of doing flocking vs exploring, see how evolution occurs in different percentage scenarios, # of agents, 
+# size of food spots, number of food spots, etc.
+# maybe work on implementing tiredness/eating food later? right now just see how the agent evolves to best help the population collect food the quickest
+# is hardcoding referring to hardcoding the paths of the agents and the locations of the food so that randomness doesn't affect the resulting behaviour?
+# or are we accepting that in an IRL scenario those things would of course be random, and the evolution would be environmentally / populationally dependent
+# PROBABLY hard code the location of the food spots for each evolutionary process (not every generation but every run) 
+# so as to find what works best for that particular layout, see how the resulting phenotype differs
+# base it off of success at gathering all hardcoded food fast (one fitness function without replenishing food)
+# then do it with a replenishing food function randomly placing more food as time goes on. test how good it is at finding and gathering that food when it appears
+# (function based on how much time the food is allowed to be in the environment after spawning before being found, the sooner the better)
+# and another function based on how much food can be gathered in the shortest amount of time (both randomly spawning, and spawning in specific "food spots" over time
+# and a list of locations that spawns one food at next location over same interval of time to see what can finish the list fastest)
+# then of course introduce more secret agents into the mix to see how they adapt to each other :) multiple evolutionary algorithms occurring in response to
+# other evolutionary algorithms... more effective or less?
+# should neighboring agents be able to share their effective genotypes with other agents in the population? should they all be trying to find an identical genotype
+# that works for them all as a whole? or individual ones that work to fulfill their role in the population amongst other evolved agents?
+
+# find a ratio of hardcoded agents to evolving ones to see what is most effective overall in random simulated environments
+
+        # should food spots disappear when all food has been gathered from them?
+        # should they just replenish over time?
+
+
+# setting the random seed means that the agent will only go to one specific neighbor (probably the same deal for food spots as well if I had to guess
+
+# should we just assume that agents will automatically pick up food and return it?? probably not to envourage diversity
+# make a genetic algorithm that determines the proportion of the population that flocks and the proportion that explores to see which is most effective at gathering?
+# as a whole?

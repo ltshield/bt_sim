@@ -10,13 +10,22 @@ PERCEPTRON_RADIUS = 50
 
 BOID_SIZE = 30
 
+GENOME_LENGTH = 500
+NUM_FOOD = 30
+
 def check_collision(obj1, obj2):
-    # print(f'{obj1} to {obj2}')
     dist = obj1.position.distance_to(obj2.position)
     if dist < obj1.radius or dist < obj2.radius:
         return True
     else:
         return False
+
+class Genome:
+    # right now just code the genome to handle the secret_agent running (only one agent at a time) so the evolver class can just keep track of the number of populations
+    def __init__(self):
+        self.genes = [random.randint(0,10) for _ in range(GENOME_LENGTH)]
+        self.fitness = None
+        # how sorted list/dictionary for fitness values?
 
 class Agent:
     def __init__(self, environment, nest, color=(255,255,255)):
@@ -26,6 +35,10 @@ class Agent:
         self.acceleration = pygame.Vector2(0,0)
         self.radius = 5
 
+        self.genomes_to_do = [Genome() for _ in range(10)]
+        self.genome = None
+        self.genomes_done = []
+
         self.environment = environment
         self.nest = nest
         self.has_food = False
@@ -33,8 +46,19 @@ class Agent:
         self.position = pygame.Vector2(WIDTH//2,HEIGHT//2)
         self.color = color
         self.behaviour_tree = None
-        self.genome = [random.randint(0,10) for _ in range(500)]
+
         self.fitness = 0
+
+        # the environment is not constructed yet, I need to wait
+        self.neighbors = None
+        self.rand_food_list = None
+        self.rand_neighbor_list = None
+
+        self.food_index = 0
+        self.neighbor_index = 0
+
+        self.to_location = None
+
         best_genome = None
         all_genomes = []
 
@@ -117,58 +141,42 @@ class Agent:
         self.update()
         return True
     
-    # should I just code it around, if it is over food, pick it up?
-    # assume there are no food spots for now?
     # UNUSED FOR RIGHT NOW
+
     def go_to_food_spot(self):
         if len(self.food_spot) == 0:
-            # print("No food spot found.")
             return False
         else:
-            # print("going to food spot")
             return True
 
     def pick_up_food(self):
         for spot in self.environment.foods:
             if check_collision(self, spot):
-                # print("pick up food")
                 self.has_food = True
                 self.environment.foods.remove(spot)
                 return True
         for area in self.environment.food_areas:
-            # print("here")
             if check_collision(self, area):
                 return True
         else:
-            # print("no food available")
             return False
-
-    # are we just to code the specific behaviours/actions and not the 
-    # condition statements? Like whether it returns true/false?
 
     def drop_food(self):
         if self.has_food and check_collision(self, self.nest):
-            # print("dropping food")
             self.has_food = False
             self.nest.food += 1
             return True
         else:
-            # print("no food to drop or not at nest")
             return False
 
     # UNUSED RIGHT NOW
-    # or should the agent be allowed to eat food that it is carrying (more opportunity to explore)
     def eat_food(self):
-        # should I create it so that the eat food function includes the agent returning to the nest in order to eat?
         if self.nest.food == 0 or check_collision(self.nest, self) == False:
-            # print("no food to eat :( or not at nest")
             return False
         else:
             self.nest.food -= 1
-            # print("eating food")
             return True
 
-    # how do i make it so it continues repeating until it makes it to den
     def go_to_den(self):
         if check_collision(self.nest, self):
             return True
@@ -178,37 +186,46 @@ class Agent:
         self.update()
         return "RUNNING"
 
+    def determine_location(self, location):
+        # it is still going to the same neighbor
+        if location == "food_area":
+            try:
+                location = self.environment.food_areas[self.rand_food_list[self.food_index]]
+                self.food_index += 1
+            # location = random.choice(agent.environment.food_areas)
+            except:
+                self.food_index = 0
+                location = self.environment.food_areas[self.rand_food_list[self.food_index]]
+                self.food_index += 1
+        elif location == "den":
+            location = self.nest
+        elif location == "neighbor":
+            try:
+                location = self.environment.boids[self.rand_neighbor_list[self.neighbor_index]]
+                self.neighbor_index += 1
+            except:
+                self.neighbor_index = 0
+                location = self.environment.boids[self.rand_neighbor_list[self.neighbor_index]]
+                self.neighbor_index += 1
+            # location = random.choice(agent.environment.boids)
+        return location
+
     def move_to(self, location):
-        # print(location)
-        if check_collision(location, self):
+        if self.to_location == None:
+            self.to_location = self.determine_location(location)
+        if check_collision(self.to_location, self):
+            self.to_location = None
+            # print(f"moved to {location}")
             return True
-        elif location:
+        # elif location:
+        elif self.to_location:
             direct = pygame.Vector2(0,0)
-            direct += (location.position - self.position).normalize()
+            direct += (self.to_location.position - self.position).normalize()
             self.acceleration += direct
             self.update()
             return "RUNNING"
         else:
             return False
-
-    """
-    TODO: write up the functions to create nest location, food spot locations,
-        : and create the behaviour tree with each condition leading to an action
-        : THEN, write up a grammar that creates a BT (and an FSM? one that 
-        : can run from anywhere, like Prof said (all states are possible
-        : starting states))
-        : then code up an evolutionary algorithm + fitness function (amount 
-        : of food collected in time, number of iterations)
-        : figure out how to hardcode certain agents (percentage of population
-        : are gatherers, others are explorers?) WHAT OTHER ROLES ARE THERE?
-        : (are we then going to let it randomly assign conditions to actions?)
-        : supposedly they should evolve to the needs of the population?
-        : population is hardcoded, only one agent run by behaviour tree
-        : then create fitness functions dependent upon whether they are
-        : in a group or on their own (higher possibility of surviving on
-        : own but lower chance of finding food), see what evolution occurs
-        : we are trying to see what the agent evolves into
-    """
 
     def check_if_food_spot(self):
         for area in self.environment.food_areas:
@@ -217,6 +234,7 @@ class Agent:
                     self.environment.found_areas.append(area)
 
     def update(self):
+        self.edges()
         self.check_if_food_spot()
         self.velocity += self.acceleration
         if self.velocity.length() > MAX_SPEED:
