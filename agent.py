@@ -1,16 +1,17 @@
 import py_trees
 import pygame
 import random
+from copy import deepcopy
 
 WIDTH, HEIGHT = 800, 600
-NUM_BOIDS = 30
+NUM_BOIDS = 25
 MAX_SPEED = 4
 MAX_FORCE = 0.1
-PERCEPTRON_RADIUS = 50
+PERCEPTION_RADIUS = 50
 
 BOID_SIZE = 30
 
-GENOME_LENGTH = 500
+GENOME_LENGTH = 1000
 NUM_FOOD = 30
 
 def check_collision(obj1, obj2):
@@ -25,6 +26,7 @@ class Genome:
     def __init__(self):
         self.genes = [random.randint(0,10) for _ in range(GENOME_LENGTH)]
         self.fitness = None
+        self.id = random.randint(0,100000)
         # how sorted list/dictionary for fitness values?
 
 class Agent:
@@ -34,16 +36,25 @@ class Agent:
         self.velocity.scale_to_length(MAX_SPEED)
         self.acceleration = pygame.Vector2(0,0)
         self.radius = 5
+        self.id = random.randint(0, 100000)
+
+        self.previous_position = (0,0)
+        self.time_since_move = 0
 
         self.genomes_to_do = [Genome() for _ in range(10)]
-        self.genome = None
+        
+        self.curr_genome = deepcopy(self.genomes_to_do[0].genes)
+        self.known_genomes = []
+
         self.genomes_done = []
 
         self.environment = environment
         self.nest = nest
         self.has_food = False
         # self.nest = nest
-        self.position = pygame.Vector2(WIDTH//2,HEIGHT//2)
+
+        # I AM GOING TO HAVE THEM START FROM ANYWHERE SO THEY DONT IMMEDIATELY SHARE THEIR FIRST GENOMES
+        self.position = pygame.Vector2(random.randint(0,WIDTH),random.randint(0,HEIGHT))
         self.color = color
         self.behaviour_tree = None
 
@@ -80,7 +91,7 @@ class Agent:
         total = 0
         for boid in boids:
             # as long as not self and the boid is in position threshold
-            if self != boid and self.position != boid.position and self.position.distance_to(boid.position) < PERCEPTRON_RADIUS:
+            if self != boid and self.position != boid.position and self.position.distance_to(boid.position) < PERCEPTION_RADIUS:
                 # add the other positions to the direction (??) and add to total
                 direct += boid.velocity
                 total += 1
@@ -98,7 +109,7 @@ class Agent:
         direct = pygame.Vector2(0,0)
         total = 0
         for boid in boids:
-            if self != boid and self.position != boid.position and self.position.distance_to(boid.position) < PERCEPTRON_RADIUS:
+            if self != boid and self.position != boid.position and self.position.distance_to(boid.position) < PERCEPTION_RADIUS:
                 direct += boid.position
                 total += 1
         if total > 0:
@@ -113,7 +124,7 @@ class Agent:
         direct = pygame.Vector2(0,0)
         total = 0
         for boid in boids:
-            if self != boid and self.position != boid.position and self.position.distance_to(boid.position) < PERCEPTRON_RADIUS:
+            if self != boid and self.position != boid.position and self.position.distance_to(boid.position) < PERCEPTION_RADIUS:
                 diff = self.position - boid.position
                 diff /= self.position.distance_to(boid.position)
                 direct += diff

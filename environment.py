@@ -8,6 +8,7 @@ class Environment:
         self.boids = [Agent(self, self.nest) for _ in range(NUM_BOIDS)]
         self.secret_agent = Agent(self, self.nest, color=(255,125,125))
         self.found_areas = []
+        self.unused_agents = 0
 
         for agent in self.boids:
             agent.neighbors = self.boids
@@ -32,7 +33,7 @@ class Nest:
 class Food:
     def __init__(self):
         self.position = pygame.Vector2(random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
-        self.radius = 20
+        self.radius = 5
     
     def update(self):
         pass

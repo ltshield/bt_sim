@@ -1,4 +1,4 @@
-from evolve import *
+from bts_evolve import *
 
 num_food = 30
 screen = pygame.display.set_mode((WIDTH, HEIGHT))

@@ -126,3 +126,13 @@ class FoodCheck(py_trees.behaviour.Behaviour):
             return py_trees.common.Status.FAILURE
 
 # should explore/flock 
+
+class Do_Nothing(py_trees.behaviour.Behaviour):
+    def __init__(self, agent):
+        super(Do_Nothing, self).__init__(name="Do nothing")
+        self.agent = agent
+    
+    # should it return failure when there are no other agents around?
+
+    def update(self):
+        return py_trees.common.Status.FAILURE
