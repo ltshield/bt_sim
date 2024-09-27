@@ -4,14 +4,15 @@ import random
 from copy import deepcopy
 
 WIDTH, HEIGHT = 800, 600
-NUM_BOIDS = 25
+# WIDTH, HEIGHT = 400, 300
+NUM_BOIDS = 20
 MAX_SPEED = 4
 MAX_FORCE = 0.1
 PERCEPTION_RADIUS = 50
 
 BOID_SIZE = 30
 
-GENOME_LENGTH = 1000
+GENOME_LENGTH = 750
 NUM_FOOD = 30
 
 def check_collision(obj1, obj2):
@@ -43,7 +44,7 @@ class Agent:
 
         self.genomes_to_do = [Genome() for _ in range(10)]
         
-        self.curr_genome = deepcopy(self.genomes_to_do[0].genes)
+        self.curr_genome = deepcopy(self.genomes_to_do[0])
         self.known_genomes = []
 
         self.genomes_done = []
