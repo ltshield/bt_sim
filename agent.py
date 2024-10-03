@@ -26,7 +26,7 @@ class Genome:
     # right now just code the genome to handle the secret_agent running (only one agent at a time) so the evolver class can just keep track of the number of populations
     def __init__(self):
         self.genes = [random.randint(0,10) for _ in range(GENOME_LENGTH)]
-        self.fitness = None
+        self.fitness = 0
         self.id = random.randint(0,100000)
         # how sorted list/dictionary for fitness values?
 
@@ -59,7 +59,9 @@ class Agent:
         self.color = color
         self.behaviour_tree = None
 
+        self.time_of_0_fitness = 0
         self.fitness = 0
+        self.dropped_food = False
 
         # the environment is not constructed yet, I need to wait
         self.neighbors = None
@@ -177,8 +179,10 @@ class Agent:
         if self.has_food and check_collision(self, self.nest):
             self.has_food = False
             self.nest.food += 1
+            self.dropped_food = True
             return True
         else:
+            self.dropped_food = False
             return False
 
     # UNUSED RIGHT NOW

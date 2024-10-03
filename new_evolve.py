@@ -34,6 +34,33 @@ clock = pygame.time.Clock()
 # assumption alignment trackers
 # different roles
 
+def calc_fitness(agent):
+    # dynamic fitness value that lessens over time of having accomplished nothing
+    if agent.fitness == 0:
+        agent.time_of_0_fitness += 1
+    agent.previous_position = deepcopy(agent.position)
+    agent.behaviour_tree.tick()
+    if agent.previous_position == agent.position and agent.curr_genome.fitness != 0:
+        # decrement fitness by each tick it hasn't moved
+        agent.fitness -= 1
+    # if check_collision(agent, agent.environment.nest) and agent.has_food:
+    # will this see if it has occurred?
+    if agent.dropped_food:
+        print('dropped food!')
+        agent.curr_genome.fitness += 50
+        agent.fitness += 50
+    # also if finding NEW food spots
+    if agent.time_of_0_fitness >= 100 and len(agent.known_genomes) != 0:
+        # MAKE SURE TO RESET TIME OF 0 FITNESS
+        agent.time_of_0_fitness = 0
+        agent.fitness = 0
+        evolver = Evolver(agent)
+        # print("switching genome ! ")
+        agent.genomes_done.append(agent.curr_genome)
+        agent.curr_genome = evolver.switch_genome()
+        parser = Parser(agent)
+        agent.behaviour_tree = py_trees.trees.BehaviourTree(parser.parse_tree())
+
 class Evolver:
     def __init__(self, agent):
         self.agent = agent
@@ -48,7 +75,6 @@ class Evolver:
     def update_fitness(self):
         # TODO: would doing so require some kind of memory that we are trying to avoid in this project?
         if self.agent.time_since_move > 45:
-            # print(f'{agent.id} hasn"t moved in {agent.time_since_move} so switching genome')
             #change genome! perform evolutionary operations
             agent.curr_genome.fitness = 0
             agent.genomes_done.append(agent.curr_genome)
@@ -56,7 +82,6 @@ class Evolver:
             if len(agent.known_genomes) != 0:
                 self.agent.curr_genome = self.switch_genome()
                 parser = Parser(self.agent)
-                # print("printing genes: ", {type(self.agent.curr_genome.genes)})
                 self.agent.behaviour_tree = py_trees.trees.BehaviourTree(parser.parse_tree())
             self.agent.time_since_move = 0
         else:
@@ -71,7 +96,6 @@ class Evolver:
             # 25% chance of mutating
             if val < 25:
                 genome1.genes[i] = random.randint(0,10)
-        # self.new_genomes.append(genome)
         new_genome.genes = genome1.genes
         return new_genome
 
@@ -79,59 +103,38 @@ class Evolver:
         # crossover from highest performing two genomes
         new_genome1 = []
         new_genome2 = []
-        # curr_index = 0
         mid_index = len(genes1)//2
-        print('original length', {len(genes1)})
-        # print(f'genes1: {genes1[:10]}')
-        # print(f'genes1: {genes2[:10]}')
-        for i in range(mid_index+1):
+        for i in range(mid_index):
             new_genome1.append(genes1[i])
-        for i in range(mid_index+1):
+        for i in range(mid_index):
             new_genome2.append(genes2[i])
-            # print(curr_index)
-        # print("starting second half")
         for i in range(mid_index):
             new_genome2.append(genes2[i])
         for i in range(mid_index):
             new_genome1.append(genes1[i])
-        # while curr_index != len(genes1):
-        #     new_genome1.append(genes2[:curr_index])
-        #     new_genome2.append(genes1[curr_index:])
-        #     curr_index += 1
-            # print(curr_index)
-        # print(f'first crossed genome: {new_genome1[:10]}')
-        # print(new_genome2[:10])
-        # print('final length:', len(new_genome1), len(new_genome2))
         return new_genome1, new_genome2
 
     def switch_genome(self):
-        print("switching genome")
+        # fitness specific to agent (do something every once in a while)
+        # fitness specific to genome (based on history at accomplishing task? should it reset every time it is run?)
+        # should genome fitness be assigned by averaging the previous fitness values of the genomes that created it?
         all_genomes = []
-        # all_genomes = self.used_genomes+self.unused_genomes
         for geno in self.used_genomes:
             all_genomes.append(geno)
         for geno in self.unused_genomes:
             all_genomes.append(geno)
-        # print(f'genes of first genome: {all_genomes[0].genes}')
-        # print(f'testing: {type(all_genomes[0].genes[0])}')
-        # for genome in all_genomes:
         while len(all_genomes) != 0:
             genome = random.choice(all_genomes)
             all_genomes.remove(genome)
             val = random.randint(0,100)
             if val <= 25:
-                print('mutating')
                 #mutate genome
                 self.new_genomes.append(self.mutate(genome))
             if val > 25 and val < 75 and len(all_genomes):
-                print('crossover')
                 # for now just randomly crossover the genomes, later implement a crossover function influenced by the fitness value
                 to_cross = random.choice(all_genomes)
-                # print(type(to_cross))
                 all_genomes.remove(to_cross)
                 crossed1, crossed2 = self.crossover(genome.genes, to_cross.genes)
-                # print(f'after cross: {crossed1}')
-                # print(f'after cross: {crossed2}')
                 gencross1 = Genome()
                 gencross1.genes = crossed1
                 gencross2 = Genome()
@@ -139,15 +142,10 @@ class Evolver:
                 self.new_genomes.append(gencross1)
                 self.new_genomes.append(gencross2)
             else:
-                print('nothing')
-                #do nothing
                 self.new_genomes.append(genome)
         use_this_one = random.choice(self.new_genomes)
-        #refresh the new_genomes?
-        # print(f'type of switchgenome func: {type(use_this_one.genes)}')
+        # refresh the new_genomes?
         return use_this_one
-
-# TODO: why do some genomes have different lengths?
 
 NUM_FOOD = 30
 environment = Environment(NUM_FOOD)
@@ -157,10 +155,10 @@ for agent in environment.boids:
 i = 0
 running = True
 while running:
-    # print(f'Tick: {i}')
+    # print(i)
+    # i += 1
     for agent in environment.boids:
         # switch genomes when not moving / accomplishing anything
-        # print(agent.time_since_move)
         # also switch genomes when having not accomplished anything new recently? or just after a time threshold
         for neighbor in environment.boids:
             if neighbor != agent:
@@ -179,21 +177,10 @@ while running:
         food_area.show(screen)
     not_movin = 0
     for agent in environment.boids:
-        # print(f'before tick {agent.position}')
-        agent.previous_position = deepcopy(agent.position)
-        agent.behaviour_tree.tick()
-        # print(f'after tick {agent.position}')
-        if agent.previous_position == agent.position:
-            # print("the positions were the same")
-            agent.time_since_move += 1
-            not_movin += 1
-        # print(agent.curr_genome.genes)
+        calc_fitness(agent)
+        # evolver = Evolver(agent)
         agent.show(screen)
-        evolver = Evolver(agent)
-
-        evolver.update_fitness()
-
-    # print(not_movin)
+        # evolver.update_fitness()
     pygame.display.flip()
     clock.tick(60)
 pygame.quit()

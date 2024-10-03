@@ -24,6 +24,7 @@ GRAMMAR
 class Parser:
     def __init__(self, agent):
         self.agent = agent
+        self.genes_to_parse = deepcopy(self.agent.curr_genome.genes)
         self.children = []
         self.depth = 0
 
@@ -31,13 +32,12 @@ class Parser:
         return self.parse_node()
     
     def parse_node(self):
-        if len(self.agent.curr_genome.genes) == 0:
+        if len(self.genes_to_parse) == 0:
             return Do_Nothing(agent=self.agent)
         self.depth += 1
         if self.depth >= 100:
             return Do_Nothing(agent=self.agent)
-        # print(f'curr gene: {type(self.agent.curr_genome.genes[0])}')
-        val = self.agent.curr_genome.genes.pop(0) % 3
+        val = self.genes_to_parse.pop(0) % 3
         if val == 0:
             return self.parse_sequence()
         elif val == 1:
@@ -68,12 +68,12 @@ class Parser:
         return selector_node
 
     def parse_to_do(self):
-        if len(self.agent.curr_genome.genes) == 0:
+        if len(self.genes_to_parse) == 0:
             return Do_Nothing(agent=self.agent)
         self.depth += 1
         if self.depth >= 100:
             return Do_Nothing(agent=self.agent)
-        val = self.agent.curr_genome.genes.pop(0)
+        val = self.genes_to_parse.pop(0)
         if val % 5 == 0:
             return Pick_up(agent=self.agent)
         elif val % 5 == 1:
@@ -89,9 +89,9 @@ class Parser:
             return Move_to(agent, location)
 
     def parse_location(self):
-        if len(self.agent.curr_genome.genes) == 0:
+        if len(self.genes_to_parse) == 0:
             return Do_Nothing(agent=self.agent)
-        val = self.agent.curr_genome.genes.pop(0)
+        val = self.genes_to_parse.pop(0)
         if val % 3 == 0:
             return "den"
         elif val % 3 == 1:
@@ -103,9 +103,9 @@ class Parser:
         self.depth += 1
         if self.depth >= 100:
             return Do_Nothing(agent=self.agent)
-        if len(self.agent.curr_genome.genes) == 0:
+        if len(self.genes_to_parse) == 0:
             return Do_Nothing(agent=self.agent)
-        val = self.agent.curr_genome.genes.pop(0)
+        val = self.genes_to_parse.pop(0)
         if val % 2 == 0:
             return FoodCheck(agent=self.agent)
         elif val % 2 == 1:
@@ -136,9 +136,9 @@ class Parser:
     """
 
     def parse_children(self):
-        if len(self.agent.curr_genome.genes) == 0:
+        if len(self.genes_to_parse) == 0:
             return Do_Nothing(agent=self.agent)
-        val = self.agent.curr_genome.genes.pop(0) % 2
+        val = self.genes_to_parse.pop(0) % 2
         # if val == 0:
         #     children = [self.parse_node()]
         #     return children
