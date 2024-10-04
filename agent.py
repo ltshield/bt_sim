@@ -45,9 +45,9 @@ class Agent:
         self.genomes_to_do = [Genome() for _ in range(10)]
         
         self.curr_genome = deepcopy(self.genomes_to_do[0])
-        self.known_genomes = []
+        self.new_genomes = []
 
-        self.genomes_done = []
+        self.finished_genomes = []
 
         self.environment = environment
         self.nest = nest
@@ -177,6 +177,7 @@ class Agent:
 
     def drop_food(self):
         if self.has_food and check_collision(self, self.nest):
+            print("dropped food")
             self.has_food = False
             self.nest.food += 1
             self.dropped_food = True

@@ -46,17 +46,16 @@ def calc_fitness(agent):
     # if check_collision(agent, agent.environment.nest) and agent.has_food:
     # will this see if it has occurred?
     if agent.dropped_food:
-        print('dropped food!')
+        # print('dropped food!')
         agent.curr_genome.fitness += 50
         agent.fitness += 50
     # also if finding NEW food spots
-    if agent.time_of_0_fitness >= 100 and len(agent.known_genomes) != 0:
+    if agent.time_of_0_fitness >= 100 and (len(agent.new_genomes) != 0) or (len(agent.finished_genomes) != 0):
         # MAKE SURE TO RESET TIME OF 0 FITNESS
         agent.time_of_0_fitness = 0
         agent.fitness = 0
         evolver = Evolver(agent)
         # print("switching genome ! ")
-        agent.genomes_done.append(agent.curr_genome)
         agent.curr_genome = evolver.switch_genome()
         parser = Parser(agent)
         agent.behaviour_tree = py_trees.trees.BehaviourTree(parser.parse_tree())
@@ -67,17 +66,20 @@ class Evolver:
         self.environment = self.agent.environment
         # ie, genomes that are not tagged with fitness values?
         # or should genomes get passed with their fitness values?
-        self.unused_genomes = deepcopy(self.agent.known_genomes)
-        self.used_genomes = deepcopy(self.agent.genomes_done)
-        self.new_genomes = []
-    
+        self.new_ones_to_use = deepcopy(self.agent.new_genomes)
+        self.old_genomes = deepcopy(self.agent.finished_genomes)
+        self._after_genomes = []
+
+
+
+    #NOT USED ANYMORE
     # should I run this individually for each tick? assign updating fitness values over time?
     def update_fitness(self):
         # TODO: would doing so require some kind of memory that we are trying to avoid in this project?
         if self.agent.time_since_move > 45:
             #change genome! perform evolutionary operations
             agent.curr_genome.fitness = 0
-            agent.genomes_done.append(agent.curr_genome)
+            agent.old_genomes.append(agent.curr_genome)
             # should we assign fitness values to them?
             if len(agent.known_genomes) != 0:
                 self.agent.curr_genome = self.switch_genome()
@@ -86,6 +88,9 @@ class Evolver:
             self.agent.time_since_move = 0
         else:
             pass
+
+
+
 
     def mutate(self, genome):
         i = 0
@@ -118,36 +123,77 @@ class Evolver:
         # fitness specific to agent (do something every once in a while)
         # fitness specific to genome (based on history at accomplishing task? should it reset every time it is run?)
         # should genome fitness be assigned by averaging the previous fitness values of the genomes that created it?
+        # TODO: figure out how to implement the evolution with an emphasis towards genomes that have large fitness values
+
+        # some kind of matrix multiplication that assigns weights (percentage chances of selecting that genome to work with) to genomes??
+        # hard code it?
+
+        self.new_ones_to_use.append(self.agent.curr_genome)
+
         all_genomes = []
-        for geno in self.used_genomes:
+        for geno in self.new_ones_to_use:
+            # print(f'{geno} new genomes')
             all_genomes.append(geno)
-        for geno in self.unused_genomes:
+        for geno in self.old_genomes:
+            # print(f'{geno} old genomes')
             all_genomes.append(geno)
-        while len(all_genomes) != 0:
+        genomes_sorted = sorted(all_genomes, key=lambda genome: genome.fitness, reverse=True)
+        # print(genomes_sorted[0].fitness)
+
+        num_to_take = len(all_genomes) % 10
+        # print(f'10% of {len(all_genomes)} is: {num_to_take}')
+
+        # print(genomes_sorted[0].fitness)
+
+        if num_to_take >= 4:
+            num_to_take = 4
+
+        # sort by the top 10%
+        for i in range(num_to_take):
+            self._after_genomes.append(genomes_sorted[i])
+            # self.agent.finished_genomes.append(self._after_genomes[i])
+
+            # gen_copy = genomes_sorted[i]
+            # self.agent.finished_genomes.append(gen_copy)
+            # if len(self.agent.finished_genomes) > 10:
+            #     self.agent.finished_genomes.append(gen_copy)
+            #     self.agent.finished_genomes = sorted(self.agent.finished_genomes, key=lambda genome: genome.fitness)[:5]
+            # else:
+            #     self.agent.finished_genomes.append(gen_copy)
+
+        # self.new_genomes.append(genomes_sorted[1])
+        while len(self._after_genomes) <= 15:
             genome = random.choice(all_genomes)
-            all_genomes.remove(genome)
+            # all_genomes.remove(genome)
             val = random.randint(0,100)
             if val <= 25:
                 #mutate genome
-                self.new_genomes.append(self.mutate(genome))
+                self._after_genomes.append(self.mutate(genome))
             if val > 25 and val < 75 and len(all_genomes):
                 # for now just randomly crossover the genomes, later implement a crossover function influenced by the fitness value
                 to_cross = random.choice(all_genomes)
-                all_genomes.remove(to_cross)
+                # all_genomes.remove(to_cross)
                 crossed1, crossed2 = self.crossover(genome.genes, to_cross.genes)
                 gencross1 = Genome()
                 gencross1.genes = crossed1
                 gencross2 = Genome()
                 gencross2.genes = crossed2
-                self.new_genomes.append(gencross1)
-                self.new_genomes.append(gencross2)
+                self._after_genomes.append(gencross1)
+                self._after_genomes.append(gencross2)
             else:
-                self.new_genomes.append(genome)
-        use_this_one = random.choice(self.new_genomes)
+                self._after_genomes.append(genome)
+        use_this_one = random.choice(self._after_genomes)
+        # self.agent.finished_genomes = []
+        # # for gen in self._after_genomes:
+        # #     self.agent.finished_genomes.append(gen)
+
+        self._after_genomes = []
+        # self.agent.new_ones_to_use = []
+        # keep final genome random, but keep around the top 10% genomes with their assigned fitness values to keep them in the pop
         # refresh the new_genomes?
         return use_this_one
 
-NUM_FOOD = 30
+NUM_FOOD = 0
 environment = Environment(NUM_FOOD)
 for agent in environment.boids:
     parser = Parser(agent)
@@ -163,9 +209,9 @@ while running:
         for neighbor in environment.boids:
             if neighbor != agent:
                 if check_collision(agent, neighbor):
-                    if neighbor.curr_genome not in agent.known_genomes:
+                    if neighbor.curr_genome not in agent.new_genomes:
                         # print(f"sharing genome! {agent.id} and {neighbor.id}")
-                        agent.known_genomes.append(neighbor.curr_genome)
+                        agent.new_genomes.append(neighbor.curr_genome)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -179,8 +225,15 @@ while running:
     for agent in environment.boids:
         calc_fitness(agent)
         # evolver = Evolver(agent)
+        if agent.has_food:
+            agent.color = (64,224,208)
+        else:
+            agent.color = (255,255,255)
         agent.show(screen)
+    print(environment.nest.food)
         # evolver.update_fitness()
     pygame.display.flip()
     clock.tick(60)
 pygame.quit()
+
+#TODO: if the environment is for whatever reason approaching a low fitness score (not going to survive), the rate of mutation/crossover/exploration/should increase! would be kind of fun to implement

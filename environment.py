@@ -1,7 +1,7 @@
 from agent import *
 
 class Environment:
-    def __init__(self, num_food=25):
+    def __init__(self, num_food=1):
         self.nest = Nest()
         self.foods = [Food() for _ in range(num_food)]
         self.food_areas = [Food_Area() for _ in range(5)]
