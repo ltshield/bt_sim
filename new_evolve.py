@@ -6,10 +6,43 @@ more heavily reward finding those foods and/or helping bring them. also deterrin
 reward the amount of food found and/or number of food spots located
 reward for telling swarm about the food spots it has located by returning/sharing information with other agents?"""
 
-class EvolveEach:
-    def __init__(self, agent):
-        self.agent = agent
-        self.gen_seed = random.randint(0,400)
+
+
+def check_nodes_stack(node):
+
+    # init node dictionary
+    node_dict = {
+        'Move to food_area': 0,
+        'Move to neighbor': 0,
+        'Move to den': 0,
+        'Do nothing': 0,
+        'Food Check': 0,
+        'Spot Check': 0,
+        'Flock': 0,
+        'Explore': 0,
+        'Pick up': 0,
+        'Drop it': 0,
+        'Sequence': 0,
+        'Selector': 0
+    }
+
+    node_dict = check_node_stack(node, node_dict)
+
+    return node_dict
+
+def check_node_stack(node, node_dict):
+    stack = [node]
+    
+    while stack:
+        current_node = stack.pop()
+
+        node_dict[current_node.name] += 1
+
+        if hasattr(current_node, "children"):
+            stack.extend(current_node.children)
+    
+    return node_dict
+
 
 
 pygame.init()
@@ -137,6 +170,29 @@ class Evolver:
         for geno in self.old_genomes:
             # print(f'{geno} old genomes')
             all_genomes.append(geno)
+        
+        """This is where I am currently implementing the additional fitness incrementation for trees that are more actions/conditions than do nothings"""
+        # I probably should implement a boolean check to see if this test has already been run on this particular genome so it doesn't keep incrementing when it should be run new every iteration
+
+        for geno in all_genomes:
+            print(f'Before: {geno.fitness}')
+            # maybe have each genome have a behaviour tree attached to it so it doesnt have to reparse every time?
+            agent = environment.secret_agent
+            agent.curr_genome = geno
+            parser = Parser(agent)
+            agent.behaviour_tree = py_trees.trees.BehaviourTree(parser.parse_tree())
+            tree_dict = check_nodes_stack(agent.behaviour_tree.root)
+            tree_fitness: float = 0
+            num_nodes: float = 0
+            for key in tree_dict.keys():
+                if key in ["Move to food_area", "Move to neighbor", "Move to den", "Explore", "Pick up", "Drop it", "Flock"]:
+                    tree_fitness += tree_dict[key]
+                    num_nodes += tree_dict[key]
+            num_nodes += tree_dict["Do nothing"]
+            print(f'Num actual nodes: {tree_fitness}, Total nodes: {num_nodes}, gives an additional {(tree_fitness/num_nodes)*20} to the genome fitness')
+            geno.fitness += (tree_fitness/num_nodes)*10
+            print(f'After: {geno.fitness}')
+
         genomes_sorted = sorted(all_genomes, key=lambda genome: genome.fitness, reverse=True)
         # print(genomes_sorted[0].fitness)
 

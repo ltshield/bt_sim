@@ -174,20 +174,52 @@ print("AGENT 2 DICT VALUES")
 for key,value in agent2_dict.items():
     print(f'Node name: {key}, Frequency: {value}')
 
+
+####################################################################
+
 # increment based on number of actions? decrement based on number of inactions? ie. do nothings?
-agent1_fitness = 0
+# agent1_fitness = 0
+# for key in agent1_dict.keys():
+#     if key in ["Move to food_area", "Move to neighbor", "Move to den", "Explore", "Pick up", "Drop it", "Flock"]:
+#         agent1_fitness += agent1_dict[key]
+# agent1_fitness -= agent1_dict["Do nothing"] // 2
+# print(agent1_fitness)
+
+# agent2_fitness = 0
+# for key in agent2_dict.keys():
+#     if key in ["Move to food_area", "Move to neighbor", "Move to den", "Explore", "Pick up", "Drop it", "Flock"]:
+#         agent2_fitness += agent2_dict[key]
+# agent2_fitness -= agent2_dict["Do nothing"] // 2
+# print(agent2_fitness)
+
+####################################################################
+
+
+# weight the normalized number of nodes as the fitness value for a diversity function?
+# ie. 64 total nodes and only 24 non-donothing nodes, (24/64) -> fitness value for that genome
+# should i weight conditions differently than actions? if i want it to be checking more often than not then yes?
+
+agent1_fitness: float = 0
+num_nodes: float = 0
+not_nothing_nodes = 0
 for key in agent1_dict.keys():
     if key in ["Move to food_area", "Move to neighbor", "Move to den", "Explore", "Pick up", "Drop it", "Flock"]:
         agent1_fitness += agent1_dict[key]
-agent1_fitness -= agent1_dict["Do nothing"] // 2
+        num_nodes += agent1_dict[key]
+num_nodes += agent1_dict["Do nothing"]
+agent1_fitness = (agent1_fitness/num_nodes)*20
 print(agent1_fitness)
 
-agent2_fitness = 0
+agent2_fitness: float = 0
+num_nodes2: float = 0
+not_nothing_nodes = 0
 for key in agent2_dict.keys():
     if key in ["Move to food_area", "Move to neighbor", "Move to den", "Explore", "Pick up", "Drop it", "Flock"]:
         agent2_fitness += agent2_dict[key]
-agent2_fitness -= agent2_dict["Do nothing"] // 2
+        num_nodes2 += agent2_dict[key]
+num_nodes2 += agent2_dict["Do nothing"]
+agent2_fitness = (agent2_fitness/num_nodes2) * 20
 print(agent2_fitness)
 
-
+# TODO: implement some kind of teamwork task?
 
