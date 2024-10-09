@@ -4,7 +4,7 @@ class Environment:
     def __init__(self, num_food=1):
         self.nest = Nest()
         self.foods = [Food() for _ in range(num_food)]
-        self.food_areas = [Food_Area() for _ in range(5)]
+        self.food_areas = [Food_Area() for _ in range(9)]
         self.boids = [Agent(self, self.nest) for _ in range(NUM_BOIDS)]
         self.secret_agent = Agent(self, self.nest, color=(255,125,125))
         self.found_areas = []

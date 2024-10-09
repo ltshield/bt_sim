@@ -67,22 +67,37 @@ clock = pygame.time.Clock()
 # assumption alignment trackers
 # different roles
 
-def calc_fitness(agent):
+def calc_fitness(agent, i):
     # dynamic fitness value that lessens over time of having accomplished nothing
+    # print(f'tick {i}')
     if agent.fitness == 0:
+        print(f"agent {agent.id} with fitness {agent.fitness} has been dead for {agent.time_of_0_fitness} ticks")
         agent.time_of_0_fitness += 1
     agent.previous_position = deepcopy(agent.position)
     agent.behaviour_tree.tick()
-    if agent.previous_position == agent.position and agent.curr_genome.fitness != 0:
+    # deleted  ' and agent.curr_genome.fitness != 0 '   ? why is it there
+    if agent.previous_position == agent.position and agent.fitness != 0:
         # decrement fitness by each tick it hasn't moved
         agent.fitness -= 1
     # if check_collision(agent, agent.environment.nest) and agent.has_food:
     # will this see if it has occurred?
+    did_action = False
     if agent.dropped_food:
         # print('dropped food!')
-        agent.curr_genome.fitness += 50
-        agent.fitness += 50
+        did_action = True
+        agent.time_of_0_fitness = 0
+        agent.curr_genome.fitness += 100
+        agent.fitness += 100
     # also if finding NEW food spots
+    for food_area in environment.food_areas:
+        if food_area not in environment.found_areas:
+            if check_collision(agent, food_area):
+                did_action = True
+                agent.fitness += 25
+                agent.curr_genome.fitness += 25
+                agent.time_of_0_fitness = 0
+    if not did_action and agent.fitness != 0:
+        agent.fitness -= 1
     if agent.time_of_0_fitness >= 100 and (len(agent.new_genomes) != 0) or (len(agent.finished_genomes) != 0):
         # MAKE SURE TO RESET TIME OF 0 FITNESS
         agent.time_of_0_fitness = 0
@@ -171,10 +186,15 @@ class Evolver:
             # print(f'{geno} old genomes')
             all_genomes.append(geno)
         
+        """###########################################################################################################################################"""
         """This is where I am currently implementing the additional fitness incrementation for trees that are more actions/conditions than do nothings"""
         # I probably should implement a boolean check to see if this test has already been run on this particular genome so it doesn't keep incrementing when it should be run new every iteration
 
         for geno in all_genomes:
+            if geno.tree_created_and_checked:
+                print(f"Genome ID: {geno.id} has already been checked")
+                continue
+            print(f"Working with Genome: {geno.id}")
             print(f'Before: {geno.fitness}')
             # maybe have each genome have a behaviour tree attached to it so it doesnt have to reparse every time?
             agent = environment.secret_agent
@@ -193,6 +213,12 @@ class Evolver:
             geno.fitness += (tree_fitness/num_nodes)*10
             print(f'After: {geno.fitness}')
 
+        """#########################################################################################################################################"""
+
+        total_fitness = sum(genome.fitness for genome in all_genomes)
+        selection_probabilities = [genome.fitness/total_fitness for genome in all_genomes]
+
+        """
         genomes_sorted = sorted(all_genomes, key=lambda genome: genome.fitness, reverse=True)
         # print(genomes_sorted[0].fitness)
 
@@ -216,20 +242,21 @@ class Evolver:
             #     self.agent.finished_genomes = sorted(self.agent.finished_genomes, key=lambda genome: genome.fitness)[:5]
             # else:
             #     self.agent.finished_genomes.append(gen_copy)
+        """
 
         # self.new_genomes.append(genomes_sorted[1])
         while len(self._after_genomes) <= 15:
-            genome = random.choice(all_genomes)
             # all_genomes.remove(genome)
             val = random.randint(0,100)
             if val <= 25:
                 #mutate genome
+                genome = random.choices(all_genomes, weights=selection_probabilities, k=1)[0]
                 self._after_genomes.append(self.mutate(genome))
             if val > 25 and val < 75 and len(all_genomes):
                 # for now just randomly crossover the genomes, later implement a crossover function influenced by the fitness value
-                to_cross = random.choice(all_genomes)
+                genomes = random.choices(all_genomes, weights=selection_probabilities, k=2)
                 # all_genomes.remove(to_cross)
-                crossed1, crossed2 = self.crossover(genome.genes, to_cross.genes)
+                crossed1, crossed2 = self.crossover(genomes[0].genes, genomes[1].genes)
                 gencross1 = Genome()
                 gencross1.genes = crossed1
                 gencross2 = Genome()
@@ -237,28 +264,29 @@ class Evolver:
                 self._after_genomes.append(gencross1)
                 self._after_genomes.append(gencross2)
             else:
+                genome = random.choices(all_genomes, weights=selection_probabilities, k=1)[0]
                 self._after_genomes.append(genome)
         use_this_one = random.choice(self._after_genomes)
         # self.agent.finished_genomes = []
         # # for gen in self._after_genomes:
         # #     self.agent.finished_genomes.append(gen)
 
-        self._after_genomes = []
+        # self._after_genomes = []
+
         # self.agent.new_ones_to_use = []
         # keep final genome random, but keep around the top 10% genomes with their assigned fitness values to keep them in the pop
         # refresh the new_genomes?
         return use_this_one
-
+i = 0
 NUM_FOOD = 0
 environment = Environment(NUM_FOOD)
 for agent in environment.boids:
     parser = Parser(agent)
     agent.behaviour_tree = py_trees.trees.BehaviourTree(parser.parse_tree())
-i = 0
 running = True
 while running:
     # print(i)
-    # i += 1
+    i += 1
     for agent in environment.boids:
         # switch genomes when not moving / accomplishing anything
         # also switch genomes when having not accomplished anything new recently? or just after a time threshold
@@ -279,14 +307,14 @@ while running:
         food_area.show(screen)
     not_movin = 0
     for agent in environment.boids:
-        calc_fitness(agent)
+        calc_fitness(agent, i)
         # evolver = Evolver(agent)
         if agent.has_food:
             agent.color = (64,224,208)
         else:
             agent.color = (255,255,255)
         agent.show(screen)
-    print(environment.nest.food)
+    # print(environment.nest.food)
         # evolver.update_fitness()
     pygame.display.flip()
     clock.tick(60)

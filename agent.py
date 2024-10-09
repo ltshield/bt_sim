@@ -5,7 +5,7 @@ from copy import deepcopy
 
 WIDTH, HEIGHT = 800, 600
 # WIDTH, HEIGHT = 400, 300
-NUM_BOIDS = 20
+NUM_BOIDS = 30
 MAX_SPEED = 4
 MAX_FORCE = 0.1
 PERCEPTION_RADIUS = 50
@@ -28,6 +28,7 @@ class Genome:
         self.genes = [random.randint(0,10) for _ in range(GENOME_LENGTH)]
         self.fitness = 0
         self.id = random.randint(0,100000)
+        self.tree_created_and_checked = False
         # how sorted list/dictionary for fitness values?
 
 class Agent:
@@ -60,6 +61,7 @@ class Agent:
         self.behaviour_tree = None
 
         self.time_of_0_fitness = 0
+        self.not_doing_anything = 0
         self.fitness = 0
         self.dropped_food = False
 
